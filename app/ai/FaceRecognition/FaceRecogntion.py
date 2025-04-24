@@ -6,6 +6,7 @@ from collections import Counter
 import numpy as np
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
+import matplotlib.pyplot as plt
 
 from ai.FaceRecognition.FaceEmbedding.FaceEmbedding import face_embedding
 from ai.FaceRecognition.SiameseNetwork.SiameseNetwork import SiameseNetwork
@@ -31,7 +32,7 @@ class FaceRecognition:
             print(self.threshold)
             print(sorted_distances)
 
-            matched_idx = np.where(sorted_distances < self.threshold)[0]
+            matched_idx = np.where(sorted_distances <= self.threshold)[0]
             matched_labels = [sorted_labels[i] for i in matched_idx]
 
             if len(matched_labels) == 0:
@@ -57,7 +58,7 @@ class FaceRecognition:
     def train(self):
         # Load dữ liệu từ DataLoader
         x_a, x_b, y = data_loader.preprocess_data_for_training()
-        x_train_a, x_test_a, x_train_b, x_test_b, y_train, y_test = train_test_split(x_a, x_b, y, test_size=0.2, random_state=42)
+        x_train_a, x_test_a, x_train_b, x_test_b, y_train, y_test = train_test_split(x_a, x_b, y, test_size=0.4, random_state=42)
 
         # Train mô hình backup
         backup_model = SiameseNetwork()
@@ -68,7 +69,23 @@ class FaceRecognition:
         distances = distances_pred.flatten().reshape(-1, 1)
         y_test = np.array(y_test)
         
-        threshold = threshold_optimize(distances, y_test) * (7.7/10)
+        threshold = threshold_optimize(distances, y_test) * 0.75
+
+        true_distance = distances[y_test == 1]
+        false_distance = distances[y_test == 0]
+
+        # Vẽ biểu đồ
+        plt.figure(figsize=(10, 6))
+        plt.hist(true_distance, bins=30, alpha=0.7, label="True Pairs (Label=1)", color='green')
+        plt.hist(false_distance, bins=30, alpha=0.7, label="False Pairs (Label=0)", color='red')
+        plt.axvline(x=threshold, color='blue', linestyle='--', label=f'Threshold = {threshold:.4f}')
+
+        plt.title("Distribution of Distances for Siamese Network")
+        plt.xlabel("Distance")
+        plt.ylabel("Frequency")
+        plt.legend()
+        plt.grid(True)
+        plt.show()
 
         # Tạo tên file có timestamp
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")

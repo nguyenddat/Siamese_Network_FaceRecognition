@@ -15,6 +15,6 @@ class FaceEmbedding:
 
     def embed_for_prediction(self, img):
         faces = self.model.get(img)
-        return [face.embedding for face in faces]
+        return faces
 
 face_embedding = FaceEmbedding()
